@@ -11,12 +11,12 @@ FROM docker.io/kinvolk/traceloop:20200514020844a4887a as traceloop
 # Main gadget image
 
 # BCC built from:
-# https://github.com/kinvolk/bcc/commit/ab54de2e4449027f2b4dccd022adc57bec4fd4eb
+# https://github.com/kinvolk/bcc/commit/0dbc076ebef1c843cace55bce102e3e7e7c4e1c4
 # See:
 # - https://github.com/kinvolk/bcc/actions
-# - https://hub.docker.com/repository/docker/kinvolk/bcc/tags
+# - https://hub.docker.com/r/kinvolk/bcc/tags
 
-FROM docker.io/kinvolk/bcc:20200330122541ab54de
+FROM docker.io/kinvolk/bcc:202005182250150dbc07
 
 RUN set -ex; \
 	export DEBIAN_FRONTEND=noninteractive; \
