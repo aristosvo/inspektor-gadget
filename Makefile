@@ -48,4 +48,4 @@ test:
 
 .PHONY: integration-tests
 integration-tests:
-	go test -test.v ./integration/... -integration -image docker.io/kinvolk/gadget:latest # FIXME
+	go test -test.v ./integration/... -integration -image docker.io/kinvolk/gadget:$(shell ./tools/image-tag branch)

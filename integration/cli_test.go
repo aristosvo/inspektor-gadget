@@ -27,6 +27,7 @@ func TestDeploy(t *testing.T) {
 		outputName   string
 		expected     string
 		ignoreOutput bool
+		debugFailed  bool
 	}{
 		{
 			name:         "Cleanup test namespace from previous tests",
@@ -45,7 +46,12 @@ func TestDeploy(t *testing.T) {
 		},
 		{
 			name:         "Wait until Inspektor Gadget is ready",
-			cmd:          "for POD in $(kubectl get pod -n kube-system -l k8s-app=gadget -o name) ; do kubectl wait -n kube-system --for=condition=ready $POD ; done ; sleep 2",
+			cmd:          "for POD in $(sleep 5 ; kubectl get pod -n kube-system -l k8s-app=gadget -o name) ; do kubectl wait -n kube-system --for=condition=ready $POD ; done ; kubectl get pod -n kube-system ; sleep 2",
+			ignoreOutput: true,
+		},
+		{
+			name:         "Show logs in the gadget pods",
+			cmd:          "for POD in $(kubectl get pod -n kube-system -l k8s-app=gadget -o name) ; do echo Logs for $POD ; kubectl logs -n kube-system $POD ; echo ; done",
 			ignoreOutput: true,
 		},
 		{
@@ -60,7 +66,7 @@ func TestDeploy(t *testing.T) {
 		},
 		{
 			name:     "Check traceloop list",
-			cmd:      "sleep 2 ; $KUBECTL_GADGET traceloop list -n test-ig --no-headers | awk '{print $1\" \"$6}'",
+			cmd:      "sleep 5 ; $KUBECTL_GADGET traceloop list -n test-ig --no-headers | awk '{print $1\" \"$6}'",
 			expected: "multiplication deleted\n",
 		},
 		{
@@ -75,6 +81,18 @@ func TestDeploy(t *testing.T) {
 			expected: "[bc] write(1, \"42\\n\", 3) = 3\n",
 		},
 		{
+			name:         "Debug: gadget logs",
+			cmd:          "for POD in $(kubectl get pod -n kube-system -l k8s-app=gadget -o name) ; do echo Logs for $POD ; kubectl logs -n kube-system $POD ; echo ; done",
+			ignoreOutput: true,
+			debugFailed:  true,
+		},
+		{
+			name:         "Debug: traceloop list",
+			cmd:          "$KUBECTL_GADGET traceloop list -A",
+			ignoreOutput: true,
+			debugFailed:  true,
+		},
+		{
 			name:     "Cleanup test namespace",
 			cmd:      "kubectl delete ns test-ig",
 			expected: "namespace \"test-ig\" deleted\n",
@@ -86,7 +104,7 @@ func TestDeploy(t *testing.T) {
 		},
 	}
 
-	os.Setenv("KUBECTL_GADGET", "../kubectl-gadget")
+	os.Setenv("KUBECTL_GADGET", "../kubectl-gadget-linux-amd64")
 	if *image != "" {
 		os.Setenv("GADGET_IMAGE_FLAG", "--image "+*image)
 	}
@@ -99,7 +117,7 @@ func TestDeploy(t *testing.T) {
 	failed := false
 	for _, tt := range commands {
 		t.Run(tt.name, func(t *testing.T) {
-			if failed {
+			if failed && !tt.debugFailed {
 				t.Skip("Previous command failed.")
 			}
 			tmpl, err := template.New("cmd").Parse(tt.cmd)
